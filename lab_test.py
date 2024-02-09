@@ -1,37 +1,49 @@
-import random
-import hashlib
-import time
 import hashlib
 import random
 import time
+from multiprocessing import Pool, cpu_count
 
-# Function to generate SHA-256 hash
 
 def random_utf8_char():
-    # Exclude the surrogate pair range
-    valid_ranges = [(0x0000, 0xD7FF), (0xE000, 0xFFFF), (0x10000, 0x10FFFF)]
-    chosen_range = random.choice(valid_ranges)
-    return chr(random.randint(*chosen_range))
+    # Using a simplified range for characters to maintain clarity
+    return chr(random.randint(0x20, 0x7E))  # Printable ASCII characters
 
-def find_hash_with_suffix(target_string, suffix='00000'):
-    start_time = time.time()  # Start timing
-    counter = 0
-    while True:
-        modified_string = target_string + random_utf8_char()
-        new_hash = hashlib.sha256(modified_string.encode('utf-8')).hexdigest()
-        if new_hash.endswith(suffix):
-            end_time = time.time()  # End timing
-            elapsed_time = end_time - start_time  # Calculate elapsed time
-            return modified_string, new_hash, counter, elapsed_time
-        counter += 1
 
-# Initial string
-initial_string = "Alex Szpakiewicz, Léonard Roussard and Sara Thibierge.Et quibusdam eligendi corrupti omnis id quas consequatur id fugiat consequatur rerum."
-initial_hash    = hashlib.sha256(initial_string.encode('utf-8')).hexdigest()
-print(f"Initial SHA-256 hash: {initial_hash}")
+def generate_hash_with_suffix(args):
+    target_string, suffix = args
+    random_char = random_utf8_char()
+    modified_string = target_string + random_char
+    new_hash = hashlib.sha256(modified_string.encode('utf-8')).hexdigest()
+    return new_hash.endswith(suffix), modified_string, new_hash
 
-modified_string, final_hash, attempts, computing_time = find_hash_with_suffix(initial_string)
-print(f"Modified string (after {attempts} attempts): {modified_string}")
-print(f"Final SHA-256 hash ending with the specified suffix: {final_hash}")
-print(f"Computing time: {computing_time} seconds")
 
+def find_hash_with_suffix_parallel(initial_string, suffix, pool_size=None):
+    if pool_size is None:
+        pool_size = cpu_count()
+        print(f"Using {pool_size} processes")
+
+    with Pool(processes=pool_size) as pool:
+        counter = 0
+        start_time = time.time()
+        while True:
+            # Create a batch of tasks for the pool
+            tasks = [(initial_string, suffix) for _ in range(1000)]  # Adjust the batch size if needed
+            results = pool.map(generate_hash_with_suffix, tasks)
+            for result in results:
+                match, modified_string, new_hash = result
+                if match:
+                    end_time = time.time()
+                    return modified_string, new_hash, counter, end_time - start_time
+                counter += 1
+
+
+# Example usage
+if __name__ == '__main__':
+    initial_string = "Alex Szpakiewicz, Léonard Roussard and Sara Thibierge."
+    print(f"Initial string: {initial_string}")
+    print(f"Initial SHA-256 hash: {hashlib.sha256(initial_string.encode('utf-8')).hexdigest()}")
+
+    modified_string, final_hash, attempts, computing_time = find_hash_with_suffix_parallel(initial_string, '000')
+    print(f"Modified string (after {attempts} attempts): {modified_string}")
+    print(f"Final SHA-256 hash ending with the specified suffix: {final_hash}")
+    print(f"Computing time: {computing_time:.2f} seconds")
