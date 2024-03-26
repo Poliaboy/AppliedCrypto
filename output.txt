@@ -1,0 +1,7 @@
+on MacOs:
+Initial string: Alex Szpakiewicz and Léonard Roussard.
+Initial SHA-256 hash: 105cb65e09542bfe5f7035301974cafb7e77d8b4b477fe4eaa34aff400dbafbc
+Modified string (after 120807519 attempts): Alex Szpakiewicz and Léonard Roussard. Ltr(
+Final SHA-256 hash ending with the specified suffix: 98f86cd40c6e2c617d268d7c6483468dc59beedfa4d7b194cdf87f4fb0000000
+Computing time: 82.99 seconds
+
